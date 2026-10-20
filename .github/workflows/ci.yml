@@ -10,6 +10,20 @@ permissions:
   contents: read
 
 jobs:
+  container-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build runtime image
+        run: docker build -t smtp-relay:test .
+      - name: Verify TLS and authentication without external network
+        run: >-
+          docker run --rm --network none --read-only
+          --tmpfs /tmp:rw,noexec,nosuid,size=16m
+          --cap-drop ALL --security-opt no-new-privileges
+          --mount "type=bind,source=${{ github.workspace }}/tests,target=/tests,readonly"
+          --entrypoint python smtp-relay:test -B /tests/container_smoke.py
+
   lint:
     runs-on: ubuntu-latest
     steps:
